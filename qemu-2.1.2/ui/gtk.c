@@ -36,6 +36,9 @@
 
 #ifdef _WIN32
 # define _WIN32_WINNT 0x0601 /* needed to get definition of MAPVK_VK_TO_VSC */
+#ifndef MAPVK_VK_TO_VSC
+#define MAPVK_VK_TO_VSC     0
+#endif
 #endif
 
 #include "qemu-common.h"
