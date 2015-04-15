@@ -1,0 +1,890 @@
+--- qemu-2.1.2/configure.orig	2014-09-25 21:54:52.000000000 +0200
++++ qemu-2.1.2/configure	2014-10-14 15:07:01.273506400 +0200
+@@ -554,7 +554,7 @@
+ CYGWIN*)
+   mingw32="yes"
+   QEMU_CFLAGS="-mno-cygwin $QEMU_CFLAGS"
+-  audio_possible_drivers="winwave sdl"
++  audio_possible_drivers="winwave dsound sdl fmod"
+   audio_drv_list="winwave"
+ ;;
+ MINGW32*)
+--- qemu-2.1.2/i386-softmmu/acpi-dsdt.dsl.i.orig	2014-10-14 16:51:50.059336200 +0200
++++ qemu-2.1.2/i386-softmmu/acpi-dsdt.dsl.i	2014-10-14 16:51:51.223452600 +0200
+@@ -1,4 +1,6 @@
+-ACPI_EXTRACT_ALL_CODE AcpiDsdtAmlCode
++
++/* ACPI_EXTRACT_ALL_CODE AcpiDsdtAmlCode */
++
+ DefinitionBlock (
+     "acpi-dsdt.aml",
+     "DSDT",
+@@ -154,7 +156,9 @@
+ Scope(\_SB.PCI0.ISA) {
+     Device (SMC) {
+         Name(_HID, EisaId("APP0001"))
+-        ACPI_EXTRACT_NAME_BYTE_CONST piix_dsdt_applesmc_sta
++        
++/* ACPI_EXTRACT_NAME_BYTE_CONST piix_dsdt_applesmc_sta */
++
+         Name(_STA, 0xF0)
+         Name(_CRS, ResourceTemplate () {
+             IO (Decode16, 0x0300, 0x0300, 0x01, 0x20)
+--- qemu-2.1.2/i386-softmmu/q35-acpi-dsdt.dsl.i.orig	2014-10-14 16:52:20.068336800 +0200
++++ qemu-2.1.2/i386-softmmu/q35-acpi-dsdt.dsl.i	2014-10-14 16:52:21.204450400 +0200
+@@ -1,4 +1,6 @@
+-ACPI_EXTRACT_ALL_CODE Q35AcpiDsdtAmlCode
++
++/* ACPI_EXTRACT_ALL_CODE Q35AcpiDsdtAmlCode */
++
+ DefinitionBlock (
+     "q35-acpi-dsdt.aml",
+     "DSDT",
+@@ -184,7 +186,9 @@
+ Scope(\_SB.PCI0.ISA) {
+     Device (SMC) {
+         Name(_HID, EisaId("APP0001"))
+-        ACPI_EXTRACT_NAME_BYTE_CONST q35_dsdt_applesmc_sta
++        
++/* ACPI_EXTRACT_NAME_BYTE_CONST q35_dsdt_applesmc_sta */
++
+         Name(_STA, 0xF0)
+         Name(_CRS, ResourceTemplate () {
+             IO (Decode16, 0x0300, 0x0300, 0x01, 0x20)
+--- qemu-2.1.2/i386-softmmu/ssdt-mem.dsl.i.orig	2014-10-14 16:52:28.287158600 +0200
++++ qemu-2.1.2/i386-softmmu/ssdt-mem.dsl.i	2014-10-14 16:52:29.269256800 +0200
+@@ -1,4 +1,6 @@
+-ACPI_EXTRACT_ALL_CODE ssdm_mem_aml
++
++/* ACPI_EXTRACT_ALL_CODE ssdm_mem_aml */
++
+ DefinitionBlock ("ssdt-mem.aml", "SSDT", 0x02, "BXPC", "CSSDT", 0x1)
+ {
+     External(\_SB.PCI0.MHPD.MCRS, MethodObj)
+@@ -6,11 +8,19 @@
+     External(\_SB.PCI0.MHPD.MOST, MethodObj)
+     External(\_SB.PCI0.MHPD.MPXM, MethodObj)
+     Scope(\_SB) {
+-        ACPI_EXTRACT_DEVICE_START ssdt_mem_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_mem_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_mem_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_mem_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_mem_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_mem_name */
++
+         Device(MPAA) {
+-            ACPI_EXTRACT_NAME_STRING ssdt_mem_id
++            
++/* ACPI_EXTRACT_NAME_STRING ssdt_mem_id */
++
+             Name(_UID, "0xAA")
+             Name(_HID, EISAID("PNP0C80"))
+             Method(_CRS, 0) {
+--- qemu-2.1.2/i386-softmmu/ssdt-misc.dsl.i.orig	2014-10-14 16:52:12.123542400 +0200
++++ qemu-2.1.2/i386-softmmu/ssdt-misc.dsl.i	2014-10-14 16:52:12.951625200 +0200
+@@ -1,30 +1,50 @@
+-ACPI_EXTRACT_ALL_CODE ssdp_misc_aml
++
++/* ACPI_EXTRACT_ALL_CODE ssdp_misc_aml */
++
+ DefinitionBlock ("ssdt-misc.aml", "SSDT", 0x01, "BXPC", "BXSSDTSUSP", 0x1)
+ {
+     Scope(\) {
+-       ACPI_EXTRACT_NAME_DWORD_CONST acpi_pci32_start
++       
++/* ACPI_EXTRACT_NAME_DWORD_CONST acpi_pci32_start */
++
+        Name(P0S, 0x12345678)
+-       ACPI_EXTRACT_NAME_DWORD_CONST acpi_pci32_end
++       
++/* ACPI_EXTRACT_NAME_DWORD_CONST acpi_pci32_end */
++
+        Name(P0E, 0x12345678)
+-       ACPI_EXTRACT_NAME_BYTE_CONST acpi_pci64_valid
++       
++/* ACPI_EXTRACT_NAME_BYTE_CONST acpi_pci64_valid */
++
+        Name(P1V, 0x12)
+-       ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_start
++       
++/* ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_start */
++
+        Name(P1S, Buffer() { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })
+-       ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_end
++       
++/* ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_end */
++
+        Name(P1E, Buffer() { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })
+-       ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_length
++       
++/* ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_length */
++
+        Name(P1L, Buffer() { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })
+     }
+     Scope(\) {
+-        ACPI_EXTRACT_NAME_STRING acpi_s3_name
++        
++/* ACPI_EXTRACT_NAME_STRING acpi_s3_name */
++
+         Name(_S3, Package(0x04) {
+             One,
+             One,
+             Zero,
+             Zero
+         })
+-        ACPI_EXTRACT_NAME_STRING acpi_s4_name
+-        ACPI_EXTRACT_PKG_START acpi_s4_pkg
++        
++/* ACPI_EXTRACT_NAME_STRING acpi_s4_name */
++
++        
++/* ACPI_EXTRACT_PKG_START acpi_s4_pkg */
++
+         Name(_S4, Package(0x04) {
+             0x2,
+             0x2,
+@@ -43,7 +63,9 @@
+     Scope(\_SB.PCI0.ISA) {
+         Device(PEVT) {
+             Name(_HID, "QEMU0001")
+-            ACPI_EXTRACT_NAME_WORD_CONST ssdt_isa_pest
++            
++/* ACPI_EXTRACT_NAME_WORD_CONST ssdt_isa_pest */
++
+             Name(PEST, 0xFFFF)
+             OperationRegion(PEOR, SystemIO, PEST, 0x01)
+             Field(PEOR, ByteAcc, NoLock, Preserve) {
+@@ -80,7 +102,9 @@
+         Device(MHPD) {
+             Name(_HID, "PNP0A06")
+             Name(_UID, "Memory hotplug resources")
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_mctrl_nr_slots
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_mctrl_nr_slots */
++
+             Name(MDNR, 0x12345678)
+             OperationRegion(HPMR, SystemIO,
+                             0x0a00,
+--- qemu-2.1.2/i386-softmmu/ssdt-pcihp.dsl.i.orig	2014-10-14 16:52:05.137843900 +0200
++++ qemu-2.1.2/i386-softmmu/ssdt-pcihp.dsl.i	2014-10-14 16:52:05.986928800 +0200
+@@ -1,34 +1,62 @@
+-ACPI_EXTRACT_ALL_CODE ssdp_pcihp_aml
++
++/* ACPI_EXTRACT_ALL_CODE ssdp_pcihp_aml */
++
+ DefinitionBlock ("ssdt-pcihp.aml", "SSDT", 0x01, "BXPC", "BXSSDTPCIHP", 0x1)
+ {
+     External(\_SB.PCI0, DeviceObj)
+     External(\_SB.PCI0.PCEJ, MethodObj)
+     External(BSEL, IntObj)
+     Scope(\_SB.PCI0) {
+-        ACPI_EXTRACT_DEVICE_START ssdt_pcihp_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_pcihp_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_pcihp_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_pcihp_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_pcihp_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_pcihp_name */
++
+         Device(SAA) {
+-            ACPI_EXTRACT_NAME_BYTE_CONST ssdt_pcihp_id
++            
++/* ACPI_EXTRACT_NAME_BYTE_CONST ssdt_pcihp_id */
++
+             Name(_SUN, 0xAA)
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcihp_adr
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcihp_adr */
++
+             Name(_ADR, 0xAA0000)
+             Method(_EJ0, 1) {
+                 PCEJ(BSEL, _SUN)
+             }
+         }
+-        ACPI_EXTRACT_DEVICE_START ssdt_pcinohp_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_pcinohp_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_pcinohp_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_pcinohp_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_pcinohp_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_pcinohp_name */
++
+         Device(SBB) {
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcinohp_adr
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcinohp_adr */
++
+             Name(_ADR, 0xAA0000)
+         }
+-        ACPI_EXTRACT_DEVICE_START ssdt_pcivga_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_pcivga_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_pcivga_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_pcivga_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_pcivga_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_pcivga_name */
++
+         Device(SCC) {
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcivga_adr
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcivga_adr */
++
+             Name(_ADR, 0xAA0000)
+             Method(_S1D, 0, NotSerialized) {
+                 Return (0x00)
+@@ -40,11 +68,19 @@
+                 Return (0x00)
+             }
+         }
+-        ACPI_EXTRACT_DEVICE_START ssdt_pciqxl_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_pciqxl_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_pciqxl_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_pciqxl_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_pciqxl_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_pciqxl_name */
++
+         Device(SDD) {
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pciqxl_adr
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pciqxl_adr */
++
+             Name(_ADR, 0xAA0000)
+             Method(_S1D, 0, NotSerialized) {
+                 Return (0x00)
+--- qemu-2.1.2/i386-softmmu/ssdt-proc.dsl.i.orig	2014-10-14 16:51:57.867116900 +0200
++++ qemu-2.1.2/i386-softmmu/ssdt-proc.dsl.i	2014-10-14 16:51:58.662196400 +0200
+@@ -1,11 +1,21 @@
+-ACPI_EXTRACT_ALL_CODE ssdp_proc_aml
++
++/* ACPI_EXTRACT_ALL_CODE ssdp_proc_aml */
++
+ DefinitionBlock ("ssdt-proc.aml", "SSDT", 0x01, "BXPC", "BXSSDT", 0x1)
+ {
+-    ACPI_EXTRACT_PROCESSOR_START ssdt_proc_start
+-    ACPI_EXTRACT_PROCESSOR_END ssdt_proc_end
+-    ACPI_EXTRACT_PROCESSOR_STRING ssdt_proc_name
++    
++/* ACPI_EXTRACT_PROCESSOR_START ssdt_proc_start */
++
++    
++/* ACPI_EXTRACT_PROCESSOR_END ssdt_proc_end */
++
++    
++/* ACPI_EXTRACT_PROCESSOR_STRING ssdt_proc_name */
++
+     Processor(CPAA, 0xAA, 0x00000000, 0x0) {
+-        ACPI_EXTRACT_NAME_BYTE_CONST ssdt_proc_id
++        
++/* ACPI_EXTRACT_NAME_BYTE_CONST ssdt_proc_id */
++
+         Name(ID, 0xAA)
+         Name(_HID, "ACPI0007")
+         External(CPMA, MethodObj)
+--- qemu-2.1.2/Makefile.objs.orig	2014-09-25 21:54:52.000000000 +0200
++++ qemu-2.1.2/Makefile.objs	2014-10-14 15:07:01.306509700 +0200
+@@ -10,7 +10,7 @@
+ block-obj-y += nbd.o block.o blockjob.o
+ block-obj-y += main-loop.o iohandler.o qemu-timer.o
+ block-obj-$(CONFIG_POSIX) += aio-posix.o
+-block-obj-$(CONFIG_WIN32) += aio-win32.o
++block-obj-$(CONFIG_WIN32) += aio-win32.o version.o
+ block-obj-y += block/
+ block-obj-y += qapi-types.o qapi-visit.o qapi-event.o
+ block-obj-y += qemu-io-cmds.o
+--- qemu-2.1.2/Makefile.orig	2014-09-25 21:54:52.000000000 +0200
++++ qemu-2.1.2/Makefile	2014-10-14 15:40:01.208480100 +0200
+@@ -166,7 +166,7 @@
+ 	$(call quiet-command,$(MAKE) $(SUBDIR_MAKEFLAGS) -C pixman V="$(V)" all,)
+ 
+ pixman/Makefile: $(SRC_PATH)/pixman/configure
+-	(cd pixman; CFLAGS="$(CFLAGS) -fPIC $(extra_cflags) $(extra_ldflags)" $(SRC_PATH)/pixman/configure $(AUTOCONF_HOST) --disable-gtk --disable-shared --enable-static)
++	(cd pixman; CFLAGS="$(CFLAGS)  $(extra_cflags) $(extra_ldflags)" $(SRC_PATH)/pixman/configure $(AUTOCONF_HOST) --disable-gtk --disable-shared --enable-static)
+ 
+ $(SRC_PATH)/pixman/configure:
+ 	(cd $(SRC_PATH)/pixman; autoreconf -v --install)
+@@ -191,11 +191,10 @@
+ 
+ recurse-all: $(SUBDIR_RULES) $(ROMSUBDIR_RULES)
+ 
+-$(BUILD_DIR)/version.o: $(SRC_PATH)/version.rc $(BUILD_DIR)/config-host.h | $(BUILD_DIR)/version.lo
++$(BUILD_DIR)/version.o: $(SRC_PATH)/version.rc $(SRC_PATH)/qemu.ico $(BUILD_DIR)/config-host.h | $(BUILD_DIR)/version.lo
+ 	$(call quiet-command,$(WINDRES) -I$(BUILD_DIR) -o $@ $<,"  RC    version.o")
+-$(BUILD_DIR)/version.lo: $(SRC_PATH)/version.rc $(BUILD_DIR)/config-host.h
++$(BUILD_DIR)/version.lo: $(SRC_PATH)/version.rc $(SRC_PATH)/qemu.ico $(BUILD_DIR)/config-host.h
+ 	$(call quiet-command,$(WINDRES) -I$(BUILD_DIR) -o $@ $<,"  RC    version.lo")
+-
+ Makefile: $(version-obj-y) $(version-lobj-y)
+ 
+ ######################################################################
+@@ -205,15 +204,15 @@
+ libqemuutil.a: $(util-obj-y) qapi-types.o qapi-visit.o qapi-event.o
+ 
+ block-modules = $(foreach o,$(block-obj-m),"$(basename $(subst /,-,$o))",) NULL
+-util/module.o-cflags = -D'CONFIG_BLOCK_MODULES=$(block-modules)'
++util/module.o-cflags = -DCONFIG_BLOCK_MODULES="$(block-modules)"
+ 
+ ######################################################################
+ 
+ qemu-img.o: qemu-img-cmds.h
+ 
+-qemu-img$(EXESUF): qemu-img.o $(block-obj-y) libqemuutil.a libqemustub.a
+-qemu-nbd$(EXESUF): qemu-nbd.o $(block-obj-y) libqemuutil.a libqemustub.a
+-qemu-io$(EXESUF): qemu-io.o $(block-obj-y) libqemuutil.a libqemustub.a
++qemu-img$(EXESUF): qemu-img.o $(block-obj-y) $(version-obj-y) libqemuutil.a libqemustub.a
++qemu-nbd$(EXESUF): qemu-nbd.o $(block-obj-y) $(version-obj-y) libqemuutil.a libqemustub.a
++qemu-io$(EXESUF): qemu-io.o $(block-obj-y) $(version-obj-y) libqemuutil.a libqemustub.a
+ 
+ qemu-bridge-helper$(EXESUF): qemu-bridge-helper.o
+ 
+@@ -382,6 +381,7 @@
+ 	$(INSTALL_DIR) "$(DESTDIR)$(qemu_confdir)"
+ 
+ install-sysconfig: install-datadir install-confdir
++	$(INSTALL_DATA) $(SRC_PATH)/qemu.ico "$(DESTDIR)$(qemu_confdir)"
+ 	$(INSTALL_DATA) $(SRC_PATH)/sysconfigs/target/target-x86_64.conf "$(DESTDIR)$(qemu_confdir)"
+ 
+ install: all $(if $(BUILD_DOCS),install-doc) install-sysconfig \
+@@ -536,11 +536,12 @@
+ 	makensis $(nsisflags) \
+                 $(if $(BUILD_DOCS),-DCONFIG_DOCUMENTATION="y") \
+                 $(if $(CONFIG_GTK),-DCONFIG_GTK="y") \
+-                -DBINDIR="${INSTDIR}" \
++                -DBINDIR=`cygpath -w "${INSTDIR}"` \
++                -DCONFSUFFIX="/Bios" \
+                 $(if $(DLL_PATH),-DDLLDIR="$(DLL_PATH)") \
+-                -DSRCDIR="$(SRC_PATH)" \
+-                -DOUTFILE="$(INSTALLER)" \
+-                $(SRC_PATH)/qemu.nsi
++                -DSRCDIR=`cygpath -w "$(SRC_PATH)"` \
++                -DOUTFILE=`cygpath -w "$(INSTALLER)"` \
++                `cygpath -w $(SRC_PATH)/qemu.nsi`
+ 	rm -r ${INSTDIR}
+ ifdef SIGNCODE
+ 	$(SIGNCODE) $(INSTALLER)
+--- qemu-2.1.2/po/fr_FR.po.orig	2014-09-25 21:54:52.000000000 +0200
++++ qemu-2.1.2/po/fr_FR.po	2014-10-15 13:39:02.951585700 +0200
+@@ -2,24 +2,24 @@
+ # This file is put in the public domain.
+ #
+ # Aurelien Jarno <aurelien@aurel32.net>, 2013, 2014.
++# Éric Lassauge <lassauge@users.sf.net>, 2014.
+ msgid ""
+ msgstr ""
+-"Project-Id-Version: QEMU 1.4.50\n"
++"Project-Id-Version: QEMU 2.1.2\n"
+ "Report-Msgid-Bugs-To: qemu-devel@nongnu.org\n"
+-"POT-Creation-Date: 2014-07-28 23:14+0200\n"
+-"PO-Revision-Date: 2014-07-28 23:25+0200\n"
+-"Last-Translator: Aurelien Jarno <aurelien@aurel32.net>\n"
++"POT-Creation-Date: 2014-10-15 13:32+0200\n"
++"PO-Revision-Date: 2014-10-15 13:32+0200\n"
++"Last-Translator: Eric Lassauge <lassauge@users.sf.net>\n"
+ "Language-Team: French <FR@li.org>\n"
+ "Language: fr\n"
+ "MIME-Version: 1.0\n"
+ "Content-Type: text/plain; charset=UTF-8\n"
+ "Content-Transfer-Encoding: 8bit\n"
+ "Plural-Forms: nplurals=2; plural=n != 1;\n"
+-"X-Generator: Lokalize 1.4\n"
+ 
+ #: ui/gtk.c:321
+ msgid " - Press Ctrl+Alt+G to release grab"
+-msgstr "- Appuyer sur Ctrl+Alt+G pour arrêter la capture"
++msgstr "- Appuyez sur Ctrl+Alt+G pour arrêter la capture"
+ 
+ #: ui/gtk.c:325
+ msgid " [Paused]"
+@@ -35,7 +35,7 @@
+ 
+ #: ui/gtk.c:1610
+ msgid "Power _Down"
+-msgstr "_Éteindre"
++msgstr "Ét_eindre"
+ 
+ #: ui/gtk.c:1616
+ msgid "_Quit"
+@@ -51,7 +51,7 @@
+ 
+ #: ui/gtk.c:1709
+ msgid "Zoom _Out"
+-msgstr "_Zoom arrière"
++msgstr "Zoom a_rrière"
+ 
+ #: ui/gtk.c:1716
+ msgid "Best _Fit"
+--- qemu-2.1.2/qemu.nsi.orig	2014-09-25 21:54:52.000000000 +0200
++++ qemu-2.1.2/qemu.nsi	2014-10-14 15:07:01.380517100 +0200
+@@ -28,6 +28,12 @@
+ !ifndef BINDIR
+ !define BINDIR nsis.tmp
+ !endif
++!ifndef CONFSUFFIX
++!define CONFSUFFIX ""
++!endif
++!ifndef CONFDIR
++!define CONFDIR "${BINDIR}${CONFSUFFIX}"
++!endif
+ !ifndef SRCDIR
+ !define SRCDIR .
+ !endif
+@@ -119,13 +125,13 @@
+     File "${SRCDIR}\README"
+     File "${SRCDIR}\VERSION"
+ 
+-    File "${BINDIR}\*.bmp"
+-    File "${BINDIR}\*.bin"
+-    File "${BINDIR}\*.dtb"
+-    File "${BINDIR}\*.rom"
+-    File "${BINDIR}\openbios-*"
++    File "${CONFDIR}\*.bmp"
++    File "${CONFDIR}\*.bin"
++    File "${CONFDIR}\*.dtb"
++    File "${CONFDIR}\*.rom"
++    File "${CONFDIR}\openbios-*"
+ 
+-    File /r "${BINDIR}\keymaps"
++    File /r "${CONFDIR}\keymaps"
+ !ifdef CONFIG_GTK
+     File /r "${BINDIR}\share"
+ !endif
+@@ -167,11 +173,12 @@
+ !ifdef CONFIG_DOCUMENTATION
+ Section "Documentation" SectionDoc
+     SetOutPath "$INSTDIR"
+-    File "${BINDIR}\qemu-doc.html"
+-    File "${BINDIR}\qemu-tech.html"
++    File "${BINDIR}\Doc\qemu-doc.html"
++    File "${BINDIR}\Doc\qemu-tech.html"
++	;; File "${BINDIR}\Doc\*.txt"
+     CreateDirectory "$SMPROGRAMS\${PRODUCT}"
+-    CreateShortCut "$SMPROGRAMS\${PRODUCT}\User Documentation.lnk" "$INSTDIR\qemu-doc.html" "" "$INSTDIR\qemu-doc.html" 0
+-    CreateShortCut "$SMPROGRAMS\${PRODUCT}\Technical Documentation.lnk" "$INSTDIR\qemu-tech.html" "" "$INSTDIR\qemu-tech.html" 0
++    CreateShortCut "$SMPROGRAMS\${PRODUCT}\User Documentation.lnk" "$INSTDIR\Doc\qemu-doc.html" "" "$INSTDIR\Doc\qemu-doc.html" 0
++    CreateShortCut "$SMPROGRAMS\${PRODUCT}\Technical Documentation.lnk" "$INSTDIR\Doc\qemu-tech.html" "" "$INSTDIR\Doc\qemu-tech.html" 0
+ SectionEnd
+ !endif
+ 
+@@ -205,19 +212,19 @@
+     Delete "$INSTDIR\COPYING.LIB"
+     Delete "$INSTDIR\README"
+     Delete "$INSTDIR\VERSION"
+-    Delete "$INSTDIR\*.bmp"
+-    Delete "$INSTDIR\*.bin"
+-    Delete "$INSTDIR\*.dll"
+-    Delete "$INSTDIR\*.dtb"
+-    Delete "$INSTDIR\*.rom"
+-    Delete "$INSTDIR\openbios-*"
++    Delete "${CONFDIR}\*.bmp"
++    Delete "${CONFDIR}\*.bin"
++    Delete "${CONFDIR}\*.dll"
++    Delete "${CONFDIR}\*.dtb"
++    Delete "${CONFDIR}\*.rom"
++    Delete "${CONFDIR}\openbios-*"
+     Delete "$INSTDIR\qemu-img.exe"
+     Delete "$INSTDIR\qemu-io.exe"
+     Delete "$INSTDIR\qemu.exe"
+     Delete "$INSTDIR\qemu-system-*.exe"
+-    Delete "$INSTDIR\qemu-doc.html"
+-    Delete "$INSTDIR\qemu-tech.html"
+-    RMDir /r "$INSTDIR\keymaps"
++    Delete "$INSTDIR\Doc\qemu-doc.html"
++    Delete "$INSTDIR\Doc\qemu-tech.html"
++    RMDir /r "${CONFDIR}\keymaps"
+     RMDir /r "$INSTDIR\share"
+     ; Remove generated files
+     Delete "$INSTDIR\stderr.txt"
+--- qemu-2.1.2/rules.mak.orig	2014-09-25 21:54:52.000000000 +0200
++++ qemu-2.1.2/rules.mak	2014-10-14 15:07:01.417520800 +0200
+@@ -17,7 +17,7 @@
+ QEMU_CXXFLAGS = -D__STDC_LIMIT_MACROS $(filter-out -Wstrict-prototypes -Wmissing-prototypes -Wnested-externs -Wold-style-declaration -Wold-style-definition -Wredundant-decls, $(QEMU_CFLAGS))
+ 
+ # Flags for dependency generation
+-QEMU_DGFLAGS += -MMD -MP -MT $@ -MF $(*D)/$(*F).d
++QEMU_DGFLAGS =
+ 
+ # Same as -I$(SRC_PATH) -I., but for the nested source/object directories
+ QEMU_INCLUDES += -I$(<D) -I$(@D)
+@@ -30,7 +30,7 @@
+ %.o: %.c
+ 	$(call quiet-command,$(CC) $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($@-cflags) -c -o $@ $<,"  CC    $(TARGET_DIR)$@")
+ %.o: %.rc
+-	$(call quiet-command,$(WINDRES) -I. -o $@ $<,"  RC    $(TARGET_DIR)$@")
++	$(call quiet-command,$(WINDRES) -I. -o  '$(shell cygpath -w $@)' '$(shell cygpath -w $<)',"  RC    $(TARGET_DIR)$@")
+ 
+ # If we have a CXX we might have some C++ objects, in which case we
+ # must link with the C++ compiler, not the plain C compiler.
+@@ -44,7 +44,7 @@
+ %.lo: %.c
+ 	$(call quiet-command,$(LIBTOOL) --mode=compile --tag=CC $(CC) $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($*.o-cflags) -c -o $@ $<,"  lt CC $@")
+ %.lo: %.rc
+-	$(call quiet-command,$(LIBTOOL) --mode=compile --tag=RC $(WINDRES) -I. -o $@ $<,"lt RC   $(TARGET_DIR)$@")
++	$(call quiet-command,$(LIBTOOL) --mode=compile --tag=RC $(WINDRES) -I. -o '$(shell cygpath -w $@)' '$(shell cygpath -w $<)',"lt RC   $(TARGET_DIR)$@")
+ %.lo: %.dtrace
+ 	$(call quiet-command,$(LIBTOOL) --mode=compile --tag=CC dtrace -o $@ -G -s $<, " lt GEN $(TARGET_DIR)$@")
+ 
+--- qemu-2.1.2/ui/gtk.c.orig	2014-09-25 21:54:53.000000000 +0200
++++ qemu-2.1.2/ui/gtk.c	2014-10-15 13:55:36.185899200 +0200
+@@ -36,6 +36,9 @@
+ 
+ #ifdef _WIN32
+ # define _WIN32_WINNT 0x0601 /* needed to get definition of MAPVK_VK_TO_VSC */
++#ifndef MAPVK_VK_TO_VSC
++#define MAPVK_VK_TO_VSC     0
++#endif
+ #endif
+ 
+ #include "qemu-common.h"
+@@ -1833,8 +1836,16 @@
+     s->free_scale = FALSE;
+ 
+     setlocale(LC_ALL, "");
+-    bindtextdomain("qemu", CONFIG_QEMU_LOCALEDIR);
+     textdomain("qemu");
++#ifdef CONFIG_WIN32
++    char *execdirname = qemu_get_exec_dir();
++    char *dirname = g_strdup_printf("%s\\share",execdirname);
++    bindtextdomain("qemu",dirname);
++    g_free(dirname);
++    g_free(execdirname);
++#else
++    bindtextdomain("qemu", CONFIG_QEMU_LOCALEDIR);
++#endif
+ 
+     s->null_cursor = gdk_cursor_new(GDK_BLANK_CURSOR);
+ 
+--- qemu-2.1.2/ui/vnc-enc-tight.c.orig	2014-09-25 21:54:53.000000000 +0200
++++ qemu-2.1.2/ui/vnc-enc-tight.c	2014-10-14 15:07:01.494528500 +0200
+@@ -50,6 +50,8 @@
+ #include "vnc-enc-tight.h"
+ #include "vnc-palette.h"
+ 
++typedef unsigned int uint;
++
+ /* Compression level stuff. The following array contains various
+    encoder parameters for each of 10 compression levels (0..9).
+    Last three parameters correspond to JPEG quality levels (0..9). */
+--- qemu-2.1.2/version.rc.orig	2014-09-25 21:54:53.000000000 +0200
++++ qemu-2.1.2/version.rc	2014-10-14 15:07:01.521531200 +0200
+@@ -1,6 +1,7 @@
+ #include <winver.h>
+ #include "config-host.h"
+ 
++500 ICON "qemu.ico"
+ VS_VERSION_INFO VERSIONINFO
+ FILEVERSION CONFIG_FILEVERSION
+ PRODUCTVERSION CONFIG_PRODUCTVERSION
+--- qemu-2.1.2/x86_64-softmmu/acpi-dsdt.dsl.i.orig	2014-10-14 18:23:50.935008200 +0200
++++ qemu-2.1.2/x86_64-softmmu/acpi-dsdt.dsl.i	2014-10-14 18:23:52.031117800 +0200
+@@ -1,4 +1,6 @@
+-ACPI_EXTRACT_ALL_CODE AcpiDsdtAmlCode
++
++/* ACPI_EXTRACT_ALL_CODE AcpiDsdtAmlCode */
++
+ DefinitionBlock (
+     "acpi-dsdt.aml",
+     "DSDT",
+@@ -154,7 +156,9 @@
+ Scope(\_SB.PCI0.ISA) {
+     Device (SMC) {
+         Name(_HID, EisaId("APP0001"))
+-        ACPI_EXTRACT_NAME_BYTE_CONST piix_dsdt_applesmc_sta
++        
++/* ACPI_EXTRACT_NAME_BYTE_CONST piix_dsdt_applesmc_sta */
++
+         Name(_STA, 0xF0)
+         Name(_CRS, ResourceTemplate () {
+             IO (Decode16, 0x0300, 0x0300, 0x01, 0x20)
+--- qemu-2.1.2/x86_64-softmmu/q35-acpi-dsdt.dsl.i.orig	2014-10-14 18:24:11.928107300 +0200
++++ qemu-2.1.2/x86_64-softmmu/q35-acpi-dsdt.dsl.i	2014-10-14 18:24:12.519166400 +0200
+@@ -1,4 +1,6 @@
+-ACPI_EXTRACT_ALL_CODE Q35AcpiDsdtAmlCode
++
++/* ACPI_EXTRACT_ALL_CODE Q35AcpiDsdtAmlCode */
++
+ DefinitionBlock (
+     "q35-acpi-dsdt.aml",
+     "DSDT",
+@@ -184,7 +186,9 @@
+ Scope(\_SB.PCI0.ISA) {
+     Device (SMC) {
+         Name(_HID, EisaId("APP0001"))
+-        ACPI_EXTRACT_NAME_BYTE_CONST q35_dsdt_applesmc_sta
++        
++/* ACPI_EXTRACT_NAME_BYTE_CONST q35_dsdt_applesmc_sta */
++
+         Name(_STA, 0xF0)
+         Name(_CRS, ResourceTemplate () {
+             IO (Decode16, 0x0300, 0x0300, 0x01, 0x20)
+--- qemu-2.1.2/x86_64-softmmu/ssdt-mem.dsl.i.orig	2014-10-14 18:24:17.088623300 +0200
++++ qemu-2.1.2/x86_64-softmmu/ssdt-mem.dsl.i	2014-10-14 18:24:17.744688900 +0200
+@@ -1,4 +1,6 @@
+-ACPI_EXTRACT_ALL_CODE ssdm_mem_aml
++
++/* ACPI_EXTRACT_ALL_CODE ssdm_mem_aml */
++
+ DefinitionBlock ("ssdt-mem.aml", "SSDT", 0x02, "BXPC", "CSSDT", 0x1)
+ {
+     External(\_SB.PCI0.MHPD.MCRS, MethodObj)
+@@ -6,11 +8,19 @@
+     External(\_SB.PCI0.MHPD.MOST, MethodObj)
+     External(\_SB.PCI0.MHPD.MPXM, MethodObj)
+     Scope(\_SB) {
+-        ACPI_EXTRACT_DEVICE_START ssdt_mem_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_mem_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_mem_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_mem_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_mem_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_mem_name */
++
+         Device(MPAA) {
+-            ACPI_EXTRACT_NAME_STRING ssdt_mem_id
++            
++/* ACPI_EXTRACT_NAME_STRING ssdt_mem_id */
++
+             Name(_UID, "0xAA")
+             Name(_HID, EISAID("PNP0C80"))
+             Method(_CRS, 0) {
+--- qemu-2.1.2/x86_64-softmmu/ssdt-misc.dsl.i.orig	2014-10-14 18:24:07.024617000 +0200
++++ qemu-2.1.2/x86_64-softmmu/ssdt-misc.dsl.i	2014-10-14 18:24:07.599674500 +0200
+@@ -1,30 +1,50 @@
+-ACPI_EXTRACT_ALL_CODE ssdp_misc_aml
++
++/* ACPI_EXTRACT_ALL_CODE ssdp_misc_aml */
++
+ DefinitionBlock ("ssdt-misc.aml", "SSDT", 0x01, "BXPC", "BXSSDTSUSP", 0x1)
+ {
+     Scope(\) {
+-       ACPI_EXTRACT_NAME_DWORD_CONST acpi_pci32_start
++       
++/* ACPI_EXTRACT_NAME_DWORD_CONST acpi_pci32_start */
++
+        Name(P0S, 0x12345678)
+-       ACPI_EXTRACT_NAME_DWORD_CONST acpi_pci32_end
++       
++/* ACPI_EXTRACT_NAME_DWORD_CONST acpi_pci32_end */
++
+        Name(P0E, 0x12345678)
+-       ACPI_EXTRACT_NAME_BYTE_CONST acpi_pci64_valid
++       
++/* ACPI_EXTRACT_NAME_BYTE_CONST acpi_pci64_valid */
++
+        Name(P1V, 0x12)
+-       ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_start
++       
++/* ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_start */
++
+        Name(P1S, Buffer() { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })
+-       ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_end
++       
++/* ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_end */
++
+        Name(P1E, Buffer() { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })
+-       ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_length
++       
++/* ACPI_EXTRACT_NAME_BUFFER8 acpi_pci64_length */
++
+        Name(P1L, Buffer() { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 })
+     }
+     Scope(\) {
+-        ACPI_EXTRACT_NAME_STRING acpi_s3_name
++        
++/* ACPI_EXTRACT_NAME_STRING acpi_s3_name */
++
+         Name(_S3, Package(0x04) {
+             One,
+             One,
+             Zero,
+             Zero
+         })
+-        ACPI_EXTRACT_NAME_STRING acpi_s4_name
+-        ACPI_EXTRACT_PKG_START acpi_s4_pkg
++        
++/* ACPI_EXTRACT_NAME_STRING acpi_s4_name */
++
++        
++/* ACPI_EXTRACT_PKG_START acpi_s4_pkg */
++
+         Name(_S4, Package(0x04) {
+             0x2,
+             0x2,
+@@ -43,7 +63,9 @@
+     Scope(\_SB.PCI0.ISA) {
+         Device(PEVT) {
+             Name(_HID, "QEMU0001")
+-            ACPI_EXTRACT_NAME_WORD_CONST ssdt_isa_pest
++            
++/* ACPI_EXTRACT_NAME_WORD_CONST ssdt_isa_pest */
++
+             Name(PEST, 0xFFFF)
+             OperationRegion(PEOR, SystemIO, PEST, 0x01)
+             Field(PEOR, ByteAcc, NoLock, Preserve) {
+@@ -80,7 +102,9 @@
+         Device(MHPD) {
+             Name(_HID, "PNP0A06")
+             Name(_UID, "Memory hotplug resources")
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_mctrl_nr_slots
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_mctrl_nr_slots */
++
+             Name(MDNR, 0x12345678)
+             OperationRegion(HPMR, SystemIO,
+                             0x0a00,
+--- qemu-2.1.2/x86_64-softmmu/ssdt-pcihp.dsl.i.orig	2014-10-14 18:24:01.357050300 +0200
++++ qemu-2.1.2/x86_64-softmmu/ssdt-pcihp.dsl.i	2014-10-14 18:24:02.064121000 +0200
+@@ -1,34 +1,62 @@
+-ACPI_EXTRACT_ALL_CODE ssdp_pcihp_aml
++
++/* ACPI_EXTRACT_ALL_CODE ssdp_pcihp_aml */
++
+ DefinitionBlock ("ssdt-pcihp.aml", "SSDT", 0x01, "BXPC", "BXSSDTPCIHP", 0x1)
+ {
+     External(\_SB.PCI0, DeviceObj)
+     External(\_SB.PCI0.PCEJ, MethodObj)
+     External(BSEL, IntObj)
+     Scope(\_SB.PCI0) {
+-        ACPI_EXTRACT_DEVICE_START ssdt_pcihp_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_pcihp_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_pcihp_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_pcihp_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_pcihp_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_pcihp_name */
++
+         Device(SAA) {
+-            ACPI_EXTRACT_NAME_BYTE_CONST ssdt_pcihp_id
++            
++/* ACPI_EXTRACT_NAME_BYTE_CONST ssdt_pcihp_id */
++
+             Name(_SUN, 0xAA)
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcihp_adr
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcihp_adr */
++
+             Name(_ADR, 0xAA0000)
+             Method(_EJ0, 1) {
+                 PCEJ(BSEL, _SUN)
+             }
+         }
+-        ACPI_EXTRACT_DEVICE_START ssdt_pcinohp_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_pcinohp_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_pcinohp_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_pcinohp_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_pcinohp_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_pcinohp_name */
++
+         Device(SBB) {
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcinohp_adr
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcinohp_adr */
++
+             Name(_ADR, 0xAA0000)
+         }
+-        ACPI_EXTRACT_DEVICE_START ssdt_pcivga_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_pcivga_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_pcivga_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_pcivga_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_pcivga_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_pcivga_name */
++
+         Device(SCC) {
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcivga_adr
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pcivga_adr */
++
+             Name(_ADR, 0xAA0000)
+             Method(_S1D, 0, NotSerialized) {
+                 Return (0x00)
+@@ -40,11 +68,19 @@
+                 Return (0x00)
+             }
+         }
+-        ACPI_EXTRACT_DEVICE_START ssdt_pciqxl_start
+-        ACPI_EXTRACT_DEVICE_END ssdt_pciqxl_end
+-        ACPI_EXTRACT_DEVICE_STRING ssdt_pciqxl_name
++        
++/* ACPI_EXTRACT_DEVICE_START ssdt_pciqxl_start */
++
++        
++/* ACPI_EXTRACT_DEVICE_END ssdt_pciqxl_end */
++
++        
++/* ACPI_EXTRACT_DEVICE_STRING ssdt_pciqxl_name */
++
+         Device(SDD) {
+-            ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pciqxl_adr
++            
++/* ACPI_EXTRACT_NAME_DWORD_CONST ssdt_pciqxl_adr */
++
+             Name(_ADR, 0xAA0000)
+             Method(_S1D, 0, NotSerialized) {
+                 Return (0x00)
+--- qemu-2.1.2/x86_64-softmmu/ssdt-proc.dsl.i.orig	2014-10-14 18:23:56.463561000 +0200
++++ qemu-2.1.2/x86_64-softmmu/ssdt-proc.dsl.i	2014-10-14 18:23:57.032617900 +0200
+@@ -1,11 +1,21 @@
+-ACPI_EXTRACT_ALL_CODE ssdp_proc_aml
++
++/* ACPI_EXTRACT_ALL_CODE ssdp_proc_aml */
++
+ DefinitionBlock ("ssdt-proc.aml", "SSDT", 0x01, "BXPC", "BXSSDT", 0x1)
+ {
+-    ACPI_EXTRACT_PROCESSOR_START ssdt_proc_start
+-    ACPI_EXTRACT_PROCESSOR_END ssdt_proc_end
+-    ACPI_EXTRACT_PROCESSOR_STRING ssdt_proc_name
++    
++/* ACPI_EXTRACT_PROCESSOR_START ssdt_proc_start */
++
++    
++/* ACPI_EXTRACT_PROCESSOR_END ssdt_proc_end */
++
++    
++/* ACPI_EXTRACT_PROCESSOR_STRING ssdt_proc_name */
++
+     Processor(CPAA, 0xAA, 0x00000000, 0x0) {
+-        ACPI_EXTRACT_NAME_BYTE_CONST ssdt_proc_id
++        
++/* ACPI_EXTRACT_NAME_BYTE_CONST ssdt_proc_id */
++
+         Name(ID, 0xAA)
+         Name(_HID, "ACPI0007")
+         External(CPMA, MethodObj)
