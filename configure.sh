@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TARGET_LIST="i386-softmmu arm-softmmu sparc-softmmu ppc-softmmu x86_64-softmmu mipsel-softmmu"
-TARGET_LIST_MIN="i386-softmmu x86_64-softmmu"
+MIN_TARGET_LIST="i386-softmmu x86_64-softmmu"
 TOP_DIR=`pwd`
 QEMU_DIR=$TOP_DIR/qemu-2.1.2
 BUILD_DIR=$TOP_DIR/build
