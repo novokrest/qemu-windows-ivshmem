@@ -19,6 +19,11 @@ common-obj-$(CONFIG_PUV3) += puv3_pm.o
 
 common-obj-$(CONFIG_MACIO) += macio/
 
+#Inter-VM shared memory
+ifeq ($(CONFIG_WIN32), y)
+obj-$(CONFIG_WIN32) += ivshmem-windows.o
+endif
+
 ifeq ($(CONFIG_PCI), y)
 obj-$(CONFIG_KVM) += ivshmem.o
 obj-$(CONFIG_LINUX) += vfio.o

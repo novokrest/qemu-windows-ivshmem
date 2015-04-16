@@ -26,7 +26,7 @@
 #include "qemu/event_notifier.h"
 #include "sysemu/char.h"
 
-#include <sys/mman.h>
+#include <windows.h>
 #include <sys/types.h>
 
 #define PCI_VENDOR_ID_IVSHMEM   PCI_VENDOR_ID_REDHAT_QUMRANET
@@ -84,7 +84,8 @@ typedef struct IVShmemState {
     uint64_t ivshmem_size; /* size of shared memory region */
     uint32_t ivshmem_attr;
     uint32_t ivshmem_64bit;
-    int shm_fd; /* shared memory file descriptor */
+    HANDLE shm_handle; /* shared memory file handle */
+    LPVOID shm_view; /* shared memory file view */
 
     Peer *peers;
     int nb_peers; /* how many guests we have space for */
@@ -112,7 +113,7 @@ enum ivshmem_registers {
 };
 
 static inline uint32_t ivshmem_has_feature(IVShmemState *ivs,
-                                                    unsigned int feature) {
+                                           unsigned int feature) {
     return (ivs->features & (1 << feature));
 }
 
@@ -233,7 +234,7 @@ static uint64_t ivshmem_io_read(void *opaque, hwaddr addr,
 
         case IVPOSITION:
             /* return my VM ID if the memory is mapped */
-            if (s->shm_fd > 0) {
+            if (s->shm_handle != INVALID_HANDLE_VALUE) {
                 ret = s->vm_id;
             } else {
                 ret = -1;
@@ -286,8 +287,9 @@ static void fake_irqfd(void *opaque, const uint8_t *buf, int size) {
     msix_notify(pdev, entry->vector);
 }
 
+#ifndef _WIN32
 static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *n,
-                                                  int vector)
+    int vector)
 {
     /* create a event character device based on the passed eventfd */
     IVShmemState *s = opaque;
@@ -308,47 +310,42 @@ static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *
         s->eventfd_table[vector].vector = vector;
 
         qemu_chr_add_handlers(chr, ivshmem_can_receive, fake_irqfd,
-                      ivshmem_event, &s->eventfd_table[vector]);
-    } else {
+            ivshmem_event, &s->eventfd_table[vector]);
+    }
+    else {
         qemu_chr_add_handlers(chr, ivshmem_can_receive, ivshmem_receive,
-                      ivshmem_event, s);
+            ivshmem_event, s);
     }
 
     return chr;
 
 }
-
-static int check_shm_size(IVShmemState *s, int fd) {
-    /* check that the guest isn't going to try and map more memory than the
-     * the object has allocated return -1 to indicate error */
-
-    struct stat buf;
-
-    fstat(fd, &buf);
-
-    if (s->ivshmem_size > buf.st_size) {
-        fprintf(stderr,
-                "IVSHMEM ERROR: Requested memory size greater"
-                " than shared object size (%" PRIu64 " > %" PRIu64")\n",
-                s->ivshmem_size, (uint64_t)buf.st_size);
-        return -1;
-    } else {
-        return 0;
-    }
-}
+#endif /* !_WIN32 */
 
 /* create the shared memory BAR when we are not using the server, so we can
  * create the BAR and map the memory immediately */
-static void create_shared_memory_BAR(IVShmemState *s, int fd) {
+static void create_shared_memory_BAR(IVShmemState *s, HANDLE hMapFile) {
 
-    void * ptr;
+    LPVOID pBuf;
 
-    s->shm_fd = fd;
+    s->shm_handle = hMapFile;
 
-    ptr = mmap(0, s->ivshmem_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+    pBuf = MapViewOfFile(hMapFile,
+        FILE_MAP_ALL_ACCESS,
+        0,
+        0,
+        s->ivshmem_size);
+
+    if (pBuf == NULL) {
+        fprintf(stderr, "IVSHMEM ERROR: "
+                         "Couldn't create view of file mapping object");
+        exit(-1);
+    }
+
+    s->shm_view = pBuf;
 
     memory_region_init_ram_ptr(&s->ivshmem, OBJECT(s), "ivshmem.bar2",
-                               s->ivshmem_size, ptr);
+                               s->ivshmem_size, pBuf);
     vmstate_register_ram(&s->ivshmem, DEVICE(s));
     memory_region_add_subregion(&s->bar, 0, &s->ivshmem);
 
@@ -420,6 +417,7 @@ static void increase_dynamic_storage(IVShmemState *s, int new_min_size) {
     }
 }
 
+#ifndef _WIN32
 static void ivshmem_read(void *opaque, const uint8_t * buf, int flags)
 {
     IVShmemState *s = opaque;
@@ -523,6 +521,7 @@ static void ivshmem_read(void *opaque, const uint8_t * buf, int flags)
         ivshmem_add_eventfd(s, incoming_posn, guest_max_eventfd);
     }
 }
+#endif /* !_WIN32 */
 
 /* Select the MSI-X vectors used by device.
  * ivshmem maps events to vectors statically, so
@@ -694,7 +693,7 @@ static int pci_ivshmem_init(PCIDevice *dev)
 
     pci_config_set_interrupt_pin(pci_conf, 1);
 
-    s->shm_fd = 0;
+    s->shm_handle = INVALID_HANDLE_VALUE;
 
     memory_region_init_io(&s->ivshmem_mmio, OBJECT(s), &ivshmem_mmio_ops, s,
                           "ivshmem-mmio", IVSHMEM_REG_BAR_SIZE);
@@ -712,6 +711,7 @@ static int pci_ivshmem_init(PCIDevice *dev)
 
     if ((s->server_chr != NULL) &&
                         (strncmp(s->server_chr->filename, "unix:", 5) == 0)) {
+#ifndef _WIN32
         /* if we get a UNIX socket as the parameter we will talk
          * to the ivshmem server to receive the memory region */
 
@@ -740,9 +740,10 @@ static int pci_ivshmem_init(PCIDevice *dev)
 
         qemu_chr_add_handlers(s->server_chr, ivshmem_can_receive, ivshmem_read,
                      ivshmem_event, s);
+#endif /* !_WIN32 */
     } else {
         /* just map the file immediately, we're not using a server */
-        int fd;
+        HANDLE hMapFile;
 
         if (s->shmobj == NULL) {
             fprintf(stderr, "Must specify 'chardev' or 'shm' to ivshmem\n");
@@ -751,28 +752,20 @@ static int pci_ivshmem_init(PCIDevice *dev)
 
         IVSHMEM_DPRINTF("using shm_open (shm object = %s)\n", s->shmobj);
 
-        /* try opening with O_EXCL and if it succeeds zero the memory
-         * by truncating to 0 */
-        if ((fd = shm_open(s->shmobj, O_CREAT|O_RDWR|O_EXCL,
-                        S_IRWXU|S_IRWXG|S_IRWXO)) > 0) {
-           /* truncate file to length PCI device's memory */
-            if (ftruncate(fd, s->ivshmem_size) != 0) {
-                fprintf(stderr, "ivshmem: could not truncate shared file\n");
-            }
+        hMapFile = CreateFileMapping(
+            INVALID_HANDLE_VALUE,
+            NULL,
+            PAGE_READWRITE,
+            0,
+            s->ivshmem_size,
+            s->shmobj);
 
-        } else if ((fd = shm_open(s->shmobj, O_CREAT|O_RDWR,
-                        S_IRWXU|S_IRWXG|S_IRWXO)) < 0) {
+        if (hMapFile == NULL) {
             fprintf(stderr, "ivshmem: could not open shared file\n");
             exit(-1);
-
         }
 
-        if (check_shm_size(s, fd) == -1) {
-            exit(-1);
-        }
-
-        create_shared_memory_BAR(s, fd);
-
+        create_shared_memory_BAR(s, hMapFile);
     }
 
     dev->config_write = ivshmem_write_config;
@@ -794,6 +787,10 @@ static void pci_ivshmem_uninit(PCIDevice *dev)
     vmstate_unregister_ram(&s->ivshmem, DEVICE(dev));
     memory_region_destroy(&s->ivshmem);
     memory_region_destroy(&s->bar);
+
+    UnmapViewOfFile(s->shm_view);
+    CloseHandle(s->shm_handle);
+
     unregister_savevm(DEVICE(dev), "ivshmem", s);
 }
 
