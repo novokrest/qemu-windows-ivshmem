@@ -11,7 +11,6 @@ cd $QEMU_DIR
 ./configure \
 --target-list="$MIN_TARGET_LIST" \
 --prefix=$BUILD_DIR \
---with-confsuffix=/Bios \
 --disable-libusb \
 --enable-gtk --with-gtkabi=2.0 \
 --enable-guest-agent  \
