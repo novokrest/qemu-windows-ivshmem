@@ -18,4 +18,7 @@ $QEMU_DISTR \
     -device virtio-blk-pci,drive=appliance \
     -device virtio-serial-pci \
     -serial stdio \
-    -append 'panic=1 console=ttyS0 udevtimeout=6000 udev.event-timeout=6000 no_timer_check acpi=off printk.time=1 cgroup_disable=memory root=/dev/vdb selinux=0 guestfs_verbose=1 TERM=xterm'
+    -chardev socket,host=localhost,port=7777,id=channel0 \
+    -device virtserialport,chardev=channel0,name=org.libguestfs.channel.0 \
+    -device ivshmem,size=128,shm=GuestfsShm \
+    -append 'panic=1 console=ttyS0 udevtimeout=6000 udev.event-timeout=6000 no_timer_check acpi=off printk.time=1 cgroup_disable=memory root=/dev/vdb selinux=0 guestfs_verbose=1 guestfs_shm=1 guestfs_shm_size=128 TERM=xterm'
