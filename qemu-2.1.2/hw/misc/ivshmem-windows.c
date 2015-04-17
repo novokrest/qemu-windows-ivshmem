@@ -29,6 +29,11 @@
 #include <windows.h>
 #include <sys/types.h>
 
+#ifdef _WIN32
+#define IVSHMEM_NAME_PREFIX "Global\\"
+#endif
+
+
 #define PCI_VENDOR_ID_IVSHMEM   PCI_VENDOR_ID_REDHAT_QUMRANET
 #define PCI_DEVICE_ID_IVSHMEM   0x1110
 
@@ -234,7 +239,7 @@ static uint64_t ivshmem_io_read(void *opaque, hwaddr addr,
 
         case IVPOSITION:
             /* return my VM ID if the memory is mapped */
-            if (s->shm_handle != INVALID_HANDLE_VALUE) {
+            if (s->shm_handle != NULL) {
                 ret = s->vm_id;
             } else {
                 ret = -1;
@@ -325,7 +330,6 @@ static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *
 /* create the shared memory BAR when we are not using the server, so we can
  * create the BAR and map the memory immediately */
 static void create_shared_memory_BAR(IVShmemState *s, HANDLE hMapFile) {
-
     LPVOID pBuf;
 
     s->shm_handle = hMapFile;
@@ -338,7 +342,7 @@ static void create_shared_memory_BAR(IVShmemState *s, HANDLE hMapFile) {
 
     if (pBuf == NULL) {
         fprintf(stderr, "IVSHMEM ERROR: "
-                         "Couldn't create view of file mapping object");
+                         "Couldn't create view of file mapping object: %s, size=%d\n", s->shmobj, s->ivshmem_size);
         exit(-1);
     }
 
@@ -693,7 +697,7 @@ static int pci_ivshmem_init(PCIDevice *dev)
 
     pci_config_set_interrupt_pin(pci_conf, 1);
 
-    s->shm_handle = INVALID_HANDLE_VALUE;
+    s->shm_handle = NULL;
 
     memory_region_init_io(&s->ivshmem_mmio, OBJECT(s), &ivshmem_mmio_ops, s,
                           "ivshmem-mmio", IVSHMEM_REG_BAR_SIZE);
@@ -744,11 +748,20 @@ static int pci_ivshmem_init(PCIDevice *dev)
     } else {
         /* just map the file immediately, we're not using a server */
         HANDLE hMapFile;
+        char *shmobj_global;
+        size_t len;
 
         if (s->shmobj == NULL) {
             fprintf(stderr, "Must specify 'chardev' or 'shm' to ivshmem\n");
             exit(1);
         }
+
+        len = strlen(IVSHMEM_NAME_PREFIX) + strlen(s->shmobj);
+        shmobj_global = malloc(len + 1);
+        snprintf(shmobj_global, len + 1, "Global\\%s", s->shmobj);
+        shmobj_global[len] = '\0';
+        free(s->shmobj);
+        s->shmobj = shmobj_global;
 
         IVSHMEM_DPRINTF("using shm_open (shm object = %s)\n", s->shmobj);
 
@@ -761,7 +774,7 @@ static int pci_ivshmem_init(PCIDevice *dev)
             s->shmobj);
 
         if (hMapFile == NULL) {
-            fprintf(stderr, "ivshmem: could not open shared file\n");
+            fprintf(stderr, "ivshmem: could not open shared file: %s\n", s->shmobj);
             exit(-1);
         }
 
