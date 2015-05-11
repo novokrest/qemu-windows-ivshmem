@@ -29,10 +29,7 @@
 #include <windows.h>
 #include <sys/types.h>
 
-#ifdef _WIN32
 #define IVSHMEM_NAME_PREFIX "Global\\"
-#endif
-
 
 #define PCI_VENDOR_ID_IVSHMEM   PCI_VENDOR_ID_REDHAT_QUMRANET
 #define PCI_DEVICE_ID_IVSHMEM   0x1110
@@ -292,41 +289,6 @@ static void fake_irqfd(void *opaque, const uint8_t *buf, int size) {
     msix_notify(pdev, entry->vector);
 }
 
-#ifndef _WIN32
-static CharDriverState* create_eventfd_chr_device(void * opaque, EventNotifier *n,
-    int vector)
-{
-    /* create a event character device based on the passed eventfd */
-    IVShmemState *s = opaque;
-    CharDriverState * chr;
-    int eventfd = event_notifier_get_fd(n);
-
-    chr = qemu_chr_open_eventfd(eventfd);
-
-    if (chr == NULL) {
-        fprintf(stderr, "creating eventfd for eventfd %d failed\n", eventfd);
-        exit(-1);
-    }
-    qemu_chr_fe_claim_no_fail(chr);
-
-    /* if MSI is supported we need multiple interrupts */
-    if (ivshmem_has_feature(s, IVSHMEM_MSI)) {
-        s->eventfd_table[vector].pdev = PCI_DEVICE(s);
-        s->eventfd_table[vector].vector = vector;
-
-        qemu_chr_add_handlers(chr, ivshmem_can_receive, fake_irqfd,
-            ivshmem_event, &s->eventfd_table[vector]);
-    }
-    else {
-        qemu_chr_add_handlers(chr, ivshmem_can_receive, ivshmem_receive,
-            ivshmem_event, s);
-    }
-
-    return chr;
-
-}
-#endif /* !_WIN32 */
-
 /* create the shared memory BAR when we are not using the server, so we can
  * create the BAR and map the memory immediately */
 static void create_shared_memory_BAR(IVShmemState *s, HANDLE hMapFile) {
@@ -420,112 +382,6 @@ static void increase_dynamic_storage(IVShmemState *s, int new_min_size) {
         s->peers[j].nb_eventfds = 0;
     }
 }
-
-#ifndef _WIN32
-static void ivshmem_read(void *opaque, const uint8_t * buf, int flags)
-{
-    IVShmemState *s = opaque;
-    int incoming_fd, tmp_fd;
-    int guest_max_eventfd;
-    long incoming_posn;
-
-    memcpy(&incoming_posn, buf, sizeof(long));
-    /* pick off s->server_chr->msgfd and store it, posn should accompany msg */
-    tmp_fd = qemu_chr_fe_get_msgfd(s->server_chr);
-    IVSHMEM_DPRINTF("posn is %ld, fd is %d\n", incoming_posn, tmp_fd);
-
-    /* make sure we have enough space for this guest */
-    if (incoming_posn >= s->nb_peers) {
-        increase_dynamic_storage(s, incoming_posn);
-    }
-
-    if (tmp_fd == -1) {
-        /* if posn is positive and unseen before then this is our posn*/
-        if ((incoming_posn >= 0) &&
-                            (s->peers[incoming_posn].eventfds == NULL)) {
-            /* receive our posn */
-            s->vm_id = incoming_posn;
-            return;
-        } else {
-            /* otherwise an fd == -1 means an existing guest has gone away */
-            IVSHMEM_DPRINTF("posn %ld has gone away\n", incoming_posn);
-            close_guest_eventfds(s, incoming_posn);
-            return;
-        }
-    }
-
-    /* because of the implementation of get_msgfd, we need a dup */
-    incoming_fd = dup(tmp_fd);
-
-    if (incoming_fd == -1) {
-        fprintf(stderr, "could not allocate file descriptor %s\n",
-                                                            strerror(errno));
-        return;
-    }
-
-    /* if the position is -1, then it's shared memory region fd */
-    if (incoming_posn == -1) {
-
-        void * map_ptr;
-
-        s->max_peer = 0;
-
-        if (check_shm_size(s, incoming_fd) == -1) {
-            exit(-1);
-        }
-
-        /* mmap the region and map into the BAR2 */
-        map_ptr = mmap(0, s->ivshmem_size, PROT_READ|PROT_WRITE, MAP_SHARED,
-                                                            incoming_fd, 0);
-        memory_region_init_ram_ptr(&s->ivshmem, OBJECT(s),
-                                   "ivshmem.bar2", s->ivshmem_size, map_ptr);
-        vmstate_register_ram(&s->ivshmem, DEVICE(s));
-
-        IVSHMEM_DPRINTF("guest h/w addr = %" PRIu64 ", size = %" PRIu64 "\n",
-                         s->ivshmem_offset, s->ivshmem_size);
-
-        memory_region_add_subregion(&s->bar, 0, &s->ivshmem);
-
-        /* only store the fd if it is successfully mapped */
-        s->shm_fd = incoming_fd;
-
-        return;
-    }
-
-    /* each guest has an array of eventfds, and we keep track of how many
-     * guests for each VM */
-    guest_max_eventfd = s->peers[incoming_posn].nb_eventfds;
-
-    if (guest_max_eventfd == 0) {
-        /* one eventfd per MSI vector */
-        s->peers[incoming_posn].eventfds = g_new(EventNotifier, s->vectors);
-    }
-
-    /* this is an eventfd for a particular guest VM */
-    IVSHMEM_DPRINTF("eventfds[%ld][%d] = %d\n", incoming_posn,
-                                            guest_max_eventfd, incoming_fd);
-    event_notifier_init_fd(&s->peers[incoming_posn].eventfds[guest_max_eventfd],
-                           incoming_fd);
-
-    /* increment count for particular guest */
-    s->peers[incoming_posn].nb_eventfds++;
-
-    /* keep track of the maximum VM ID */
-    if (incoming_posn > s->max_peer) {
-        s->max_peer = incoming_posn;
-    }
-
-    if (incoming_posn == s->vm_id) {
-        s->eventfd_chr[guest_max_eventfd] = create_eventfd_chr_device(s,
-                   &s->peers[s->vm_id].eventfds[guest_max_eventfd],
-                   guest_max_eventfd);
-    }
-
-    if (ivshmem_has_feature(s, IVSHMEM_IOEVENTFD)) {
-        ivshmem_add_eventfd(s, incoming_posn, guest_max_eventfd);
-    }
-}
-#endif /* !_WIN32 */
 
 /* Select the MSI-X vectors used by device.
  * ivshmem maps events to vectors statically, so
@@ -715,36 +571,8 @@ static int pci_ivshmem_init(PCIDevice *dev)
 
     if ((s->server_chr != NULL) &&
                         (strncmp(s->server_chr->filename, "unix:", 5) == 0)) {
-#ifndef _WIN32
-        /* if we get a UNIX socket as the parameter we will talk
-         * to the ivshmem server to receive the memory region */
-
-        if (s->shmobj != NULL) {
-            fprintf(stderr, "WARNING: do not specify both 'chardev' "
-                                                "and 'shm' with ivshmem\n");
-        }
-
-        IVSHMEM_DPRINTF("using shared memory server (socket = %s)\n",
-                                                    s->server_chr->filename);
-
-        if (ivshmem_has_feature(s, IVSHMEM_MSI)) {
-            ivshmem_setup_msi(s);
-        }
-
-        /* we allocate enough space for 16 guests and grow as needed */
-        s->nb_peers = 16;
-        s->vm_id = -1;
-
-        /* allocate/initialize space for interrupt handling */
-        s->peers = g_malloc0(s->nb_peers * sizeof(Peer));
-
-        pci_register_bar(dev, 2, s->ivshmem_attr, &s->bar);
-
-        s->eventfd_chr = g_malloc0(s->vectors * sizeof(CharDriverState *));
-
-        qemu_chr_add_handlers(s->server_chr, ivshmem_can_receive, ivshmem_read,
-                     ivshmem_event, s);
-#endif /* !_WIN32 */
+        fprintf(stderr, "qemu doesn't supported ivshmem server on Windows");
+        exit(1);
     } else {
         /* just map the file immediately, we're not using a server */
         HANDLE hMapFile;
